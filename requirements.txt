@@ -1,0 +1,2 @@
+altair>=2.0
+pandas
