@@ -7,7 +7,7 @@ Starborn is a Python visualization library based on Altair that aims to be API-c
 Documentation
 -------------
 
-In progress ...
+In progress, but a few examples are [here](https://github.com/PythonCharmers/starborn/blob/master/doc/starborn_examples.ipynb).
 
 
 Dependencies
@@ -21,10 +21,14 @@ Installation requires [altair](http://altair-viz.github.io).
 Installation
 ------------
 
-The latest stable release (and older versions) can be installed from PyPI:
+In the future, you can install Starborn from PyPI via:
 
     pip install starborn
 
+For now, get it from GitHub:
+
+	pip install git+https://github.com/PythonCharmers/starborn
+	
 
 Testing
 -------
