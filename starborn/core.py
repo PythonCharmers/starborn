@@ -118,3 +118,60 @@ def stripplot(x=None, y=None, hue=None, data=None):
 
     chart = alt.Chart(data).mark_tick().encode(**kwargs)
     return chart
+
+
+def pairplot(data, hue=None, vars=None):
+    if vars is None:
+        vars = list(data.columns)
+
+    chart = alt.Chart(data).mark_circle().encode(
+                alt.X(alt.repeat("column"), type='quantitative'),
+                alt.Y(alt.repeat("row"), type='quantitative'),
+                color='{hue}:N'.format(hue=hue)
+            ).properties(
+                width=250,
+                height=250
+            ).repeat(
+                row=vars,
+                column=vars
+            )
+    return chart
+
+
+def barplot(x=None, y=None, hue=None, data=None, orient=None):
+    if data is None:
+        if y is None:
+            data = x.to_frame()
+            x = data.columns[0]
+        elif x is None:
+            data = y.to_frame()
+            y = data.columns[0]
+        else:
+            raise RuntimeError('not supported yet ...')
+
+    kwargs = {}
+
+    # TODO: infer the orientation automatically:
+    if orient is None or orient == 'v':
+        if x is not None:
+            kwargs['x'] = '{x}'.format(x=x)
+        if y is not None:
+            kwargs['y'] = 'average({y})'.format(y=y)
+    else:
+        if x is not None:
+            kwargs['x'] = 'average({x})'.format(x=x)
+        if y is not None:
+            kwargs['y'] = '{y}'.format(y=y)
+
+    if hue is not None:
+        if orient == 'h':
+            kwargs['row'] = kwargs['y']
+            kwargs['y'] = hue
+        elif orient == 'v':
+            kwargs['column'] = kwargs['x']
+            kwargs['x'] = hue
+        kwargs['color'] = hue
+
+    chart = alt.Chart(data).mark_bar().encode(**kwargs)
+    return chart
+

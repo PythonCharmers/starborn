@@ -5,6 +5,8 @@ Functions available:
     - stripplot
     - heatmap
     - jointplot
+    - pairplot
+    - barplot
 """
 
-from .core import stripplot, heatmap, jointplot
+from .core import *
