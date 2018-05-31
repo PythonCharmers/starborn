@@ -14,11 +14,13 @@ in-browser panning and zooming.
 Plot types supported
 --------------------
 
-- stripplot
-- heatmap
+- scatterplot
 - jointplot
+- heatmap
+- stripplot
 - pairplot
 - barplot
+- violinplot
 
 
 Documentation
