@@ -8,6 +8,7 @@ def get_limit_tuple(series):
 
 
 def scatterplot(x, y, data, hue=None, xlim=None, ylim=None):
+    # TODO: refactor so it uses category_chart_kwargs?
     if xlim is None:
         xlim = get_limit_tuple(data[x])
     if ylim is None:
@@ -98,6 +99,7 @@ def heatmap(data, vmin=None, vmax=None, annot=None, fmt='.2g'):
 
 
 def stripplot(x=None, y=None, hue=None, data=None):
+    # TODO: refactor so it uses category_chart_kwargs()
     if data is None:
         if y is None:
             data = x.to_frame()
@@ -138,7 +140,16 @@ def pairplot(data, hue=None, vars=None):
     return chart
 
 
-def barplot(x=None, y=None, hue=None, data=None, orient=None):
+def category_chart_kwargs(x=None, y=None, hue=None, data=None, order=None, orient=None, hue_order=None, estimator='mean'):
+    """
+    Somewhat similar to the `establish_variables()` method in Seaborn's
+    `_CategoricalPlotter` class.
+
+    Return value
+    ============
+    a dictionary of kwargs for encoding the Altair chart
+    """
+
     if data is None:
         if y is None:
             data = x.to_frame()
@@ -152,14 +163,17 @@ def barplot(x=None, y=None, hue=None, data=None, orient=None):
     kwargs = {}
 
     # TODO: infer the orientation automatically:
-    if orient is None or orient == 'v':
+    if orient is None:
+        orient = 'v'
+
+    if orient == 'v':
         if x is not None:
             kwargs['x'] = '{x}'.format(x=x)
         if y is not None:
-            kwargs['y'] = 'average({y})'.format(y=y)
+            kwargs['y'] = '{estimator}({y})'.format(estimator=estimator, y=y)
     else:
         if x is not None:
-            kwargs['x'] = 'average({x})'.format(x=x)
+            kwargs['x'] = '{estimator}({x})'.format(estimator=estimator, x=x)
         if y is not None:
             kwargs['y'] = '{y}'.format(y=y)
 
@@ -172,6 +186,107 @@ def barplot(x=None, y=None, hue=None, data=None, orient=None):
             kwargs['x'] = hue
         kwargs['color'] = hue
 
+    empty_axis=alt.Axis(domain=False, labels=False, title='', ticks=False) #, offset=-12, zindex=1)
+
+    axis_kwargs = {}
+    if hue is None:
+        axis_kwargs['sort'] = order
+    else:
+        if hue_order is not None:
+            axis_kwargs['sort'] = hue_order
+        axis_kwargs['axis'] = empty_axis
+    
+    if orient == 'v':
+        x = alt.X(kwargs['x'], **axis_kwargs)
+        kwargs['x'] = x
+    else:
+        y = alt.Y(kwargs['y'], **axis_kwargs)
+        kwargs['y'] = y
+
+    if hue is not None:
+        if order is not None:
+            raise ValueError('custom order is not implemented for grouped bar charts (when `hue` is not `None`). Vega-Lite current does not support sorting of facets ...')
+        if orient == 'v':
+            column = alt.Column(kwargs['column']) #, axis=alt.Axis(orient='bottom'))
+            kwargs['column'] = column
+        else:
+            row = alt.Row(kwargs['row']) #, axis=alt.Axis(orient='left'), sort=order)
+            kwargs['row'] = row
+
+    return kwargs
+
+
+def barplot(x=None, y=None, hue=None, data=None, order=None, orient=None, hue_order=None):
+    kwargs = category_chart_kwargs(x=x, y=y, hue=hue, data=data, order=order, orient=orient, hue_order=hue_order)
+
     chart = alt.Chart(data).mark_bar().encode(**kwargs)
     return chart
+
+
+def boxplot(x=None, y=None, hue=None, data=None, order=None, orient=None):
+    # TODO: refactor so it uses category_chart_kwargs
+
+    # TODO: infer the orientation automatically:
+    if orient is None or orient == 'v':
+        return boxplot_vertical(x=x, y=y, hue=hue, data=data, order=order)
+    else:
+        return boxplot_horizontal(x=x, y=y, hue=hue, data=data, order=order)
+
+
+def boxplot_vertical(x=None, y=None, hue=None, data=None, order=None):
+
+    # orientation_mapper = {'v': {'x': 'x', 'y': 'y'},
+    #                       'h': {'x': 'y', 'y': 'x'}}
+
+    # Define aggregate fields
+    lower_box = 'q1({value}):Q'.format(value=y)
+    lower_whisker = 'min({value}):Q'.format(value=y)
+    upper_box = 'q3({value}):Q'.format(value=y)
+    upper_whisker = 'max({value}):Q'.format(value=y)
+    
+    kwargs = {'x': '{x}:O'.format(x=x)}
+
+    if hue is not None:
+        kwargs['color'] = '{hue}:N'.format(hue=hue)
+        # Swap x for column
+        column, kwargs['x'] = kwargs['x'], '{hue}:N'.format(hue=hue)
+
+    base = alt.Chart().encode(
+        **kwargs
+    )
+
+    # Compose each layer individually
+    lower_whisker = base.mark_rule().encode(
+        y=alt.Y(lower_whisker, axis=alt.Axis(title=y)),
+        y2=lower_box,
+    )
+    
+    middle_bar_kwargs = dict(
+        y=lower_box,
+        y2=upper_box,
+    )
+    if hue is None:
+        middle_bar_kwargs['color'] = 'year:O'
+
+    middle_bar = base.mark_bar(size=10.0).encode(**middle_bar_kwargs)
+
+    upper_whisker = base.mark_rule().encode(
+        y=upper_whisker,
+        y2=upper_box,
+    )
+    
+    middle_tick = base.mark_tick(
+        color='white',
+        size=10.0
+    ).encode(
+        y='median({value}):Q'.format(value=y),
+    )
+    
+    chart = (lower_whisker + upper_whisker + middle_bar + middle_tick)
+
+    if hue is None:
+        chart.data = data
+        return chart
+    else:
+        return chart.facet(column=column, data=data)
 

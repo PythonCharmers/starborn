@@ -1,10 +1,11 @@
 starborn: statistical data visualization based on Vega and Altair
 =================================================================
 
-Starborn is a Python visualization library based on Altair that aims to be
-API-compatible with [Seaborn](seaborn.pydata.org). Like Seaborn, it provides a
-high-level interface for drawing attractive statistical graphics. Thanks to the
-Vega library, it can also offer interactivity: in-browser panning and zooming.
+Starborn is a Python visualization library based on Vega and Altair that aims
+to be API-compatible with [Seaborn](seaborn.pydata.org). Like Seaborn, it
+provides a high-level interface for drawing attractive statistical graphics.
+Thanks to the underlying libraries, it can also offer interactivity with
+in-browser panning and zooming.
 
 
 **Development status:** Alpha.
