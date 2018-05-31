@@ -290,3 +290,30 @@ def boxplot_vertical(x=None, y=None, hue=None, data=None, order=None):
     else:
         return chart.facet(column=column, data=data)
 
+
+def violinplot(x=None, y=None, data=None, orient=None):
+    # TODO: automatically infer orientation
+
+    if orient is None or orient == 'v':
+        kwargs = dict(
+                    x=alt.X('count(*):Q',
+                            axis=alt.Axis(grid=False, labels=False),
+                            stack='center',
+                            title=''),
+                    y=alt.Y('{y}:Q'.format(y=y), bin=alt.Bin(maxbins=100)),
+                    column='{x}:N'.format(x=x),
+                    color='{x}:N'.format(x=x)
+        )
+    else:
+        kwargs = dict(
+                    y=alt.Y('count(*):Q',
+                            axis=alt.Axis(grid=False, labels=False),
+                            stack='center',
+                            title=''),
+                    x=alt.X('{x}:Q'.format(x=x), bin=alt.Bin(maxbins=100)),
+                    row='{y}:N'.format(y=y),
+                    color='{y}:N'.format(y=y)
+        )
+    chart = alt.Chart(data).mark_area().encode(**kwargs)
+    return chart
+
